@@ -24,6 +24,22 @@ from .schema import Citation, Claim, Grounding
 
 _WORD_RE = re.compile(r"\w+", re.UNICODE)
 _SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
+# Periods after these tokens are not sentence boundaries (issue #18).
+_ABBREV_PERIOD_PATTERNS = (
+    re.compile(r"(?<=\bDr)\.(?=\s)", re.IGNORECASE),
+    re.compile(r"(?<=\bMr)\.(?=\s)", re.IGNORECASE),
+    re.compile(r"(?<=\bMrs)\.(?=\s)", re.IGNORECASE),
+    re.compile(r"(?<=\bMs)\.(?=\s)", re.IGNORECASE),
+    re.compile(r"(?<=\be\.g)\.(?=\s)", re.IGNORECASE),
+    re.compile(r"(?<=\bi\.e)\.(?=\s)", re.IGNORECASE),
+)
+_ABBREV_PLACEHOLDER = "\x00"
+
+
+def _protect_abbrev_periods(text: str) -> str:
+    for pattern in _ABBREV_PERIOD_PATTERNS:
+        text = pattern.sub(_ABBREV_PLACEHOLDER, text)
+    return text
 
 
 def _tokens(text: str) -> list[str]:
@@ -38,8 +54,12 @@ def _ngrams(tokens: list[str], n: int) -> set[tuple[str, ...]]:
 
 def split_claims(answer: str) -> list[str]:
     """Split an answer into sentence-level claims."""
-    parts = [s.strip() for s in _SENTENCE_RE.split(answer.strip())]
-    return [p for p in parts if p]
+    text = answer.strip()
+    if not text:
+        return []
+    protected = _protect_abbrev_periods(text)
+    parts = [s.strip() for s in _SENTENCE_RE.split(protected)]
+    return [p.replace(_ABBREV_PLACEHOLDER, ".") for p in parts if p]
 
 
 def overlap_score(claim: str, source_content: str, n: int = 3) -> float:

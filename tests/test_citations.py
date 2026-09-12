@@ -6,6 +6,20 @@ def test_split_claims_basic():
     assert claims == ["The sky is blue.", "Water is wet!", "Is it?", "Yes."]
 
 
+def test_split_claims_does_not_split_abbreviations():
+    claims = split_claims("Meet Dr. Smith. He works in Paris.")
+    assert claims == ["Meet Dr. Smith.", "He works in Paris."]
+
+    claims = split_claims("Mr. Jones lives here. She is nice.")
+    assert claims == ["Mr. Jones lives here.", "She is nice."]
+
+    claims = split_claims("Use e.g. this example. Then stop.")
+    assert claims == ["Use e.g. this example.", "Then stop."]
+
+    claims = split_claims("That is i.e. the same thing. OK.")
+    assert claims == ["That is i.e. the same thing.", "OK."]
+
+
 def test_overlap_full_match():
     text = "the mitochondria is the powerhouse of the cell"
     assert overlap_score(text, text) == 1.0
